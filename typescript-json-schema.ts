@@ -470,6 +470,8 @@ export class JsonSchemaGenerator {
      */
     private inheritingTypes: { [baseName: string]: string[] };
 
+    private ignoreDocs: { [name: string]: string[] } = {};
+
     /**
      * This map holds references to all reffed definitions, including schema
      * overrides and generated definitions.
@@ -528,40 +530,19 @@ export class JsonSchemaGenerator {
     }
 
     private resetSchemaSpecificProperties() {
-      this.reffedDefinitions = {};
-      this.typeIdsByName = {};
-      this.typeNamesById = {};
+        this.reffedDefinitions = {};
+        this.typeIdsByName = {};
+        this.typeNamesById = {};
 
-      // restore schema overrides
-      this.schemaOverrides.forEach((value, key) => {
-        this.reffedDefinitions[key] = value;
-      });
+        // restore schema overrides
+        this.schemaOverrides.forEach((value, key) => {
+            this.reffedDefinitions[key] = value;
+        });
     }
 
-    /**
-     * Parse the comments of a symbol into the definition and other annotations.
-     */
-    private parseCommentsIntoDefinition(symbol: ts.Symbol, definition: Definition, otherAnnotations: {}): void {
-        if (!symbol) {
-            return;
-        }
-
-        if (!this.isFromDefaultLib(symbol)) {
-            // the comments for a symbol
-            const comments = symbol.getDocumentationComment(this.tc);
-
-            if (comments.length) {
-                definition.description = comments
-                    .map((comment) =>
-                        comment.kind === "lineBreak" ? comment.text : comment.text.trim().replace(/\r\n/g, "\n")
-                    )
-                    .join("");
-            }
-        }
-
-        // jsdocs are separate from comments
-        const jsdocs = symbol.getJsDocTags();
-        jsdocs.forEach((doc) => {
+    private getDocsBySymbol(symbol: ts.Symbol) {
+        const jsDocs = symbol.getJsDocTags();
+        return jsDocs.map((doc) => {
             // if we have @TJS-... annotations, we have to parse them
             let name = doc.name;
             const originalText = doc.text ? doc.text.map(t => t.text).join("") : "";
@@ -586,6 +567,43 @@ export class JsonSchemaGenerator {
                     name = (text as string).replace(/^[\s\-]+/, "");
                     text = "true";
                 }
+            }
+            return { doc, name, text }
+        });
+    }
+
+    /**
+     * Parse the comments of a symbol into the definition and other annotations.
+     */
+    private parseCommentsIntoDefinition(symbol: ts.Symbol, definition: Definition, otherAnnotations: {}): void {
+        if (!symbol) {
+            return;
+        }
+
+        if (!this.isFromDefaultLib(symbol)) {
+            // the comments for a symbol
+            const comments = symbol.getDocumentationComment(this.tc);
+
+            if (comments.length) {
+                definition.description = comments
+                    .map((comment) =>
+                        comment.kind === "lineBreak" ? comment.text : comment.text.trim().replace(/\r\n/g, "\n")
+                    )
+                    .join("");
+            }
+        }
+
+        // jsdocs are separate from comments
+        const jsdocs = this.getDocsBySymbol(symbol);
+        const self = this;
+        jsdocs.forEach(({ doc, name, text }) => {
+            console.log({ doc, name, text });
+            try { var text1 = JSON.parse(text) } catch { }
+            if (
+                self.ignoreDocs[name] &&
+                (self.ignoreDocs[name].includes(text1) || self.ignoreDocs[name].includes("*"))
+            ) {
+                return;
             }
 
             // In TypeScript ~3.5, the annotation name splits at the dot character so we have
@@ -684,7 +702,7 @@ export class JsonSchemaGenerator {
                     if (
                         propertyType.flags & ts.TypeFlags.Object &&
                         (propertyType as ts.ObjectType).objectFlags &
-                            (ts.ObjectFlags.Anonymous | ts.ObjectFlags.Interface | ts.ObjectFlags.Mapped)
+                        (ts.ObjectFlags.Anonymous | ts.ObjectFlags.Interface | ts.ObjectFlags.Mapped)
                     ) {
                         definition.type = "object";
                         definition.additionalProperties = false;
@@ -992,6 +1010,28 @@ export class JsonSchemaGenerator {
         return definition;
     }
 
+    private buildIgnoresDocs(typ: ts.Type): any {
+        while (
+            typ.aliasSymbol &&
+            (typ.aliasSymbol.escapedName === "Readonly" || typ.aliasSymbol.escapedName === "Mutable") &&
+            typ.aliasTypeArguments &&
+            typ.aliasTypeArguments[0]
+        ) {
+            typ = typ.aliasTypeArguments[0];
+        }
+        const jsDocs = this.getDocsBySymbol(typ.aliasSymbol!);
+        const ignores = jsDocs.filter(d => "ignoreDocs" === d.name);
+        if (!ignores.length)
+            return;
+        ignores.forEach(({ text }) => {
+            text = text.trim().replace(/\s*(?=\s)/g, "");
+            const key = text.split(/\s?:\s?/)[0];
+            const values = text.split(/\s?:\s?/)[1].split(/\s/g).map(v => {
+                try { return JSON.parse(v) } catch { return v }
+            });
+            this.ignoreDocs[key] = values;
+        });
+    }
 
     private getClassDefinition(clazzType: ts.Type, definition: Definition): Definition {
         const node = clazzType.getSymbol()!.getDeclarations()![0];
@@ -1406,7 +1446,7 @@ export class JsonSchemaGenerator {
         }
 
         this.resetSchemaSpecificProperties();
-
+        this.buildIgnoresDocs(this.allSymbols[symbolName])
         const def = this.getTypeDefinition(
             this.allSymbols[symbolName],
             this.args.topRef,
@@ -1442,6 +1482,7 @@ export class JsonSchemaGenerator {
         }
 
         for (const symbolName of symbolNames) {
+            this.buildIgnoresDocs(this.allSymbols[symbolName])
             root.definitions[symbolName] = this.getTypeDefinition(
                 this.allSymbols[symbolName],
                 this.args.topRef,
@@ -1450,6 +1491,7 @@ export class JsonSchemaGenerator {
                 undefined,
                 this.userSymbols[symbolName]
             );
+            this.ignoreDocs = {};
         }
         if (this.args.ref && includeReffedDefinitions && Object.keys(this.reffedDefinitions).length > 0) {
             root.definitions = { ...root.definitions, ...this.reffedDefinitions };
@@ -1474,7 +1516,7 @@ export class JsonSchemaGenerator {
             if (onlyIncludeFiles === undefined) {
                 return !file.isDeclarationFile;
             }
-            return onlyIncludeFiles.filter(f => pathEqual(f,file.fileName)).length > 0;
+            return onlyIncludeFiles.filter(f => pathEqual(f, file.fileName)).length > 0;
         }
         const files = program.getSourceFiles().filter(includeFile);
         if (files.length) {
