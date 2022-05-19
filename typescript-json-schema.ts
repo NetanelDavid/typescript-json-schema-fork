@@ -597,7 +597,6 @@ export class JsonSchemaGenerator {
         const jsdocs = this.getDocsBySymbol(symbol);
         const self = this;
         jsdocs.forEach(({ doc, name, text }) => {
-            console.log({ doc, name, text });
             try { var text1 = JSON.parse(text) } catch { }
             if (
                 self.ignoreDocs[name] &&
@@ -1019,7 +1018,10 @@ export class JsonSchemaGenerator {
         ) {
             typ = typ.aliasTypeArguments[0];
         }
-        const jsDocs = this.getDocsBySymbol(typ.aliasSymbol!);
+        if (!typ.aliasSymbol) {
+            return;
+        }
+        const jsDocs = this.getDocsBySymbol(typ.aliasSymbol);
         const ignores = jsDocs.filter(d => "ignoreDocs" === d.name);
         if (!ignores.length)
             return;

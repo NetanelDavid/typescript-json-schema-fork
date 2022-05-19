@@ -397,7 +397,6 @@ var JsonSchemaGenerator = (function () {
         jsdocs.forEach(function (_a) {
             var _b, _c;
             var doc = _a.doc, name = _a.name, text = _a.text;
-            console.log({ doc: doc, name: name, text: text });
             try {
                 var text1 = JSON.parse(text);
             }
@@ -772,6 +771,9 @@ var JsonSchemaGenerator = (function () {
             typ.aliasTypeArguments &&
             typ.aliasTypeArguments[0]) {
             typ = typ.aliasTypeArguments[0];
+        }
+        if (!typ.aliasSymbol) {
+            return;
         }
         var jsDocs = this.getDocsBySymbol(typ.aliasSymbol);
         var ignores = jsDocs.filter(function (d) { return "ignoreDocs" === d.name; });
