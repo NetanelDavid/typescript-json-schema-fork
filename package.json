@@ -1,13 +1,42 @@
 {
-  "name": "typescript-json-schema",
-  "version": "0.53.0",
-  "description": "typescript-json-schema generates JSON Schema files from your Typescript sources",
-  "main": "dist/typescript-json-schema.js",
-  "typings": "dist/typescript-json-schema.d.ts",
-  "bin": {
-    "typescript-json-schema": "./bin/typescript-json-schema"
+  "_args": [
+    [
+      "typescript-json-schema@0.53.0",
+      "C:\\Users\\netanel.d\\progaming\\economicBalance\\EconomicBalanceBE"
+    ]
+  ],
+  "_development": true,
+  "_from": "typescript-json-schema@0.53.0",
+  "_id": "typescript-json-schema@0.53.0",
+  "_inBundle": false,
+  "_integrity": "sha512-BcFxC9nipQQOXxrBGI/jOWU31BwzVh6vqJR008G8VHKJtQ8YrZX6veriXfTK1l+L0/ff0yKl3mZigMLA6ZqkHg==",
+  "_location": "/typescript-json-schema",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "typescript-json-schema@0.53.0",
+    "name": "typescript-json-schema",
+    "escapedName": "typescript-json-schema",
+    "rawSpec": "0.53.0",
+    "saveSpec": null,
+    "fetchSpec": "0.53.0"
   },
-  "author": "Yousef El-Dardiry and Dominik Moritz",
+  "_requiredBy": [
+    "#DEV:/"
+  ],
+  "_resolved": "https://registry.npmjs.org/typescript-json-schema/-/typescript-json-schema-0.53.0.tgz",
+  "_spec": "0.53.0",
+  "_where": "C:\\Users\\netanel.d\\progaming\\economicBalance\\EconomicBalanceBE",
+  "author": {
+    "name": "Yousef El-Dardiry and Dominik Moritz"
+  },
+  "bin": {
+    "typescript-json-schema": "bin/typescript-json-schema"
+  },
+  "bugs": {
+    "url": "https://github.com/YousefED/typescript-json-schema/issues"
+  },
   "contributors": [
     {
       "name": "Yousef El-Dardiry",
@@ -28,18 +57,6 @@
       "email": "hi@fabiandev.io"
     }
   ],
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:YousefED/typescript-json-schema.git"
-  },
-  "license": "BSD-3-Clause",
-  "keywords": [
-    "typescript",
-    "json",
-    "forms",
-    "jsonschema",
-    "schema"
-  ],
   "dependencies": {
     "@types/json-schema": "^7.0.9",
     "@types/node": "^16.9.2",
@@ -50,6 +67,7 @@
     "yargs": "^17.1.1",
     "path-equal": "1.1.2"
   },
+  "description": "typescript-json-schema generates JSON Schema files from your Typescript sources",
   "devDependencies": {
     "@types/chai": "^4.2.21",
     "@types/glob": "^7.1.4",
@@ -62,16 +80,37 @@
     "source-map-support": "^0.5.20",
     "tslint": "^6.1.3"
   },
+  "homepage": "https://github.com/YousefED/typescript-json-schema#readme",
+  "keywords": [
+    "typescript",
+    "json",
+    "forms",
+    "jsonschema",
+    "schema"
+  ],
+  "licenses": [
+    {
+      "type": "BSD-3-Clause"
+    }
+  ],
+  "main": "dist/typescript-json-schema.js",
+  "name": "typescript-json-schema",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/YousefED/typescript-json-schema.git"
+  },
   "scripts": {
-    "prepare": "tsc; yarn docs",
-    "test": "tsc && mocha -t 5000 --require source-map-support/register dist/test",
+    "build": "tsc -p .",
     "debug": "node --inspect=19248 --inspect-brk -r ts-node/register typescript-json-schema-cli.ts",
+    "dev": "tsc -w -p .",
     "docs": "./update-docs.js",
-    "run": "ts-node typescript-json-schema-cli.ts",
-    "build": "tsc",
     "lint": "tslint --project tsconfig.json -c tslint.json --exclude '**/*.d.ts'",
-    "style": "prettier --write *.js *.ts test/*.ts",
-    "dev": "tsc -w",
+    "prepublishOnly": "yarn build",
+    "run": "ts-node typescript-json-schema-cli.ts",
+    "style": "yarn prettier --write *.js *.ts test/*.ts",
+    "test": "yarn build && mocha -t 5000 --require source-map-support/register dist/test",
     "test:dev": "mocha -t 5000 --watch --require source-map-support/register dist/test"
-  }
+  },
+  "typings": "dist/typescript-json-schema.d.ts",
+  "version": "0.53.0"
 }
