@@ -397,12 +397,16 @@ var JsonSchemaGenerator = (function () {
         jsdocs.forEach(function (_a) {
             var _b, _c;
             var doc = _a.doc, name = _a.name, text = _a.text;
+            var text1;
             try {
-                var text1 = JSON.parse(text);
+                text1 = JSON.parse(text);
             }
-            catch (_d) { }
-            if (self.ignoreDocs[name] &&
-                (self.ignoreDocs[name].includes(text1) || self.ignoreDocs[name].includes("*"))) {
+            catch (_d) {
+                text1 = text;
+            }
+            var relevantValues = self.ignoreDocs[name] || self.ignoreDocs["*"];
+            if (relevantValues &&
+                (relevantValues.includes(text1) || relevantValues.includes("*"))) {
                 return;
             }
             if (subDefinitions[name]) {

@@ -597,10 +597,12 @@ export class JsonSchemaGenerator {
         const jsdocs = this.getDocsBySymbol(symbol);
         const self = this;
         jsdocs.forEach(({ doc, name, text }) => {
-            try { var text1 = JSON.parse(text) } catch { }
+            let text1: string;
+            try { text1 = JSON.parse(text) } catch { text1 = text }
+            const relevantValues = self.ignoreDocs[name] || self.ignoreDocs["*"];
             if (
-                self.ignoreDocs[name] &&
-                (self.ignoreDocs[name].includes(text1) || self.ignoreDocs[name].includes("*"))
+                relevantValues &&
+                (relevantValues.includes(text1) || relevantValues.includes("*"))
             ) {
                 return;
             }
